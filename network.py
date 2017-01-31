@@ -160,8 +160,14 @@ class network:
             loss = loss - inlabel[i]*np.log(self.outProb[i])
 
         return loss
+    def validate(self, valData, valLabel):
+        correct = 0
+        for i in range(len(valData)):
+            if self.predict(valData[i]) == valLabel[i]:
+                correct = correct + 1
+        return correct*1.0/len(valData)
 
-    def train(self, trainInput, trainLabel, batchSize, maxIter, lr=0.0001):
+    def train(self, trainInput, trainLabel,valData, valLabel, batchSize, maxIter, lr=0.0001):
 
         # assert(len(trainInput) >= batchSize), "Batch Size is greater than number of examples."
         assert(len(trainInput) == len(trainLabel)), "Size Mismatch, Training Data not equal to Training labels"
@@ -169,7 +175,7 @@ class network:
         assert(len(trainLabel[0,:]) == numClasses), "Target Label Dimension Mismatch"
 
         j = 0
-
+        iterforEpoch = len(trainInput)/batchSize
         for i in range(maxIter):
 
             #zero out the accumulated gradients
@@ -194,7 +200,11 @@ class network:
             # update weights
             self.update(batchSize, lr)
 
-            print 'Iteration ',i+1,'/',maxIter,'Training Loss = ', loss
+            print 'Iteration ',i+1,'/',maxIter,'Training Loss = ', loss/batchSize
+
+            if (i+1)%iterforEpoch == 0 :
+                print 'Epoch ', i/iterforEpoch + 1 ,'Accuracy: ',self.validate(valData, valLabel)
+
             j = (j+batchSize)%len(trainInput)
 
 
