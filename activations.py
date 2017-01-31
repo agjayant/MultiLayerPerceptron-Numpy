@@ -12,7 +12,7 @@ def activation(x, func):
     elif func == 'tanh':
 
         def tanh(y):
-            return ( ( 1-np.exp( -2*inp) )/( 1-np.exp( -2*inp ) ) )
+            return ( ( 1-np.exp( -2*y ) )/( 1 + np.exp( -2*y ) ) )
         tanh = np.vectorize(tanh)
 
         return tanh(x)
