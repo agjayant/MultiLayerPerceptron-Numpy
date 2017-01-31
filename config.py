@@ -3,6 +3,7 @@
 ############################
 
 trainExamples = 1000
+valExamples = 100
 batchSize = 10
 maxIter = 500
 lr = 0.0001
@@ -10,6 +11,10 @@ lr = 0.0001
 ############################
 ## Network Parameters     ##
 ############################
+
+'''
+Architecture
+'''
 
 # Number of Hidden Layers
 nhidden_layers = 2
@@ -21,6 +26,10 @@ nnodes = [20, 15]
 
 #Activation Function : 'relu'
 actfun = 'relu'
+
+'''
+Fixed
+'''
 
 #Input Size
 n_inputs = 784
