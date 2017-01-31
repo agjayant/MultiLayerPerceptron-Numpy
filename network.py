@@ -140,7 +140,7 @@ class network:
 
             # update hidden biases
             for k in range(self.nnod[self.nhid-i-1]):
-                self.hidError[self.nhid-i-2][k, self.nnod] = self.hidError[self.nhid-i-2][k, self.nnod] +tempError[k]
+                self.hidError[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] = self.hidError[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] +tempError[k]
 
         tempError = self.backActivate(prevError, 1)
 
