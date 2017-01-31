@@ -1,11 +1,12 @@
 import numpy as np
 import activations
+import config
 
-minW = -0.1
-maxW = 0.1
-n_inputs = 784      # input feature size
-numClasses = 10     # number of classes in dataset
-initBias = 0.01
+minW = config.minW
+maxW = config.maxW
+n_inputs = config.n_inputs          # input feature size
+numClasses = config.numClasses
+initBias = config.initBias
 
 class network:
     def __init__(self, nhidden_layers, nnodes, actfun):
@@ -57,7 +58,6 @@ class network:
         inputVal = np.array(inputVal)
         inputVal = np.append(inputVal,1)
 
-        #### <<< TODO >>> ####
         assert (self.nhid > 0), "Atleast One Hidden Layer"
 
         # computation for first hidden layer
@@ -81,10 +81,7 @@ class network:
 
     def activate(self, inp):
 
-        if self.actfn == 'relu':
-            return activations.relu(inp)
-        else:
-            assert(0 == 1),'Invalid Activation Function'
+        return activations.activation(inp, self.actfn)
 
     def predict(self, inputVal):
 
@@ -99,19 +96,8 @@ class network:
         self.outW = self.outW - lr*self.outError/batchSize
 
     def backActivate(self, error, layer):
-        assert(len(self.netUnits[layer-1]) == len(error) ),"debugging 1"
 
-        if self.actfn == 'relu':
-
-            def ReLU(x):
-                return 1 if x > 0 else 0
-
-            ReLU = np.vectorize(ReLU)
-
-            mask = ReLU(self.netUnits[layer-1][:,0])
-            return mask*error
-        else:
-            assert(0 == 1),'Invalid Activation Layer'
+        return activations.backActivate( error, self.netUnits[layer-1][:,0], self.netUnits[layer-1][:,1] , self.actfn )
 
     def backward(self,inputVal,  label):
 
