@@ -74,7 +74,7 @@ class network:
 
         # computation for first hidden layer
         self.netUnits[0][:,0] = np.dot(self.inW , inputVal)
-        self.netUnits[0][:,1] = self.activate(self.netUnits[0][:,0])
+        self.netUnits[0][:,1] = activations.activation(self.netUnits[0][:,0], self.actfn)
 
         #computation for rest of the hidden layers
         if self.nhid > 1:
@@ -83,17 +83,13 @@ class network:
                 tempInp = np.copy(self.netUnits[i-1][:,1])
                 tempInp = np.append(tempInp,1)
                 self.netUnits[i][:,0]= np.dot(self.hidW[i-1],tempInp)
-                self.netUnits[i][:,1]= self.activate(self.netUnits[i][:,0])
+                self.netUnits[i][:,1]= activations.activation(self.netUnits[i][:,0], self.actfn)
 
         #computation for the output layer
         tempInp= np.copy(self.netUnits[self.nhid-1][:,1])
         tempInp = np.append(tempInp,1)
         self.outNet = np.dot(self.outW,tempInp)
         self.outProb = np.exp(self.outNet)/sum(np.exp(self.outNet))
-
-    def activate(self, inp):
-
-        return activations.activation(inp, self.actfn)
 
     def predict(self, inputVal):
 
@@ -102,10 +98,13 @@ class network:
 
     def update(self, batchSize,lr, gradMethod):
 
+        nnod = self.nnod
+        nhid = self.nhid
+
         if gradMethod == 'mbsgd':
 
             self.inW = self.inW - lr*self.inError/batchSize
-            for i in range(self.nhid-1):
+            for i in range(nhid-1):
                 self.hidW[i] = self.hidW[i] - lr*self.hidError[i]/batchSize
             self.outW = self.outW - lr*self.outError/batchSize
 
@@ -113,65 +112,65 @@ class network:
 
             # update output weights
             for i in range(numClasses):
-                for j in range(self.nnod[self.nhid - 1]):
+                for j in range(nnod[nhid - 1]):
                     self.outW[i,j] -= lr*self.outError[i,j]/(batchSize*np.sqrt(self.outPastGrad[i,j] + epsi))
 
             #update output biases
             for i in range(numClasses):
-                self.outW[i,self.nnod[self.nhid-1]] -= lr*self.outError[i, self.nnod[self.nhid-1] ]/(batchSize*np.sqrt(self.outPastGrad[i,self.nnod[self.nhid-1] ]+ epsi))
+                self.outW[i,nnod[nhid-1]] -= lr*self.outError[i, nnod[nhid-1] ]/(batchSize*np.sqrt(self.outPastGrad[i,nnod[nhid-1] ]+ epsi))
 
-            for i in range(self.nhid-1):
+            for i in range(nhid-1):
                 # update hidden weights
-                for k in range(self.nnod[self.nhid-i-2]):
-                    for j in range(self.nnod[self.nhid-i-1]):
-                        self.hidW[ self.nhid - i-2][j,k ] -= lr*self.hidError[self.nhid-i-2][j,k]/(batchSize*np.sqrt(self.hidPastGrad[self.nhid-i-2][j,k]+ epsi))
+                for k in range(nnod[nhid-i-2]):
+                    for j in range(nnod[nhid-i-1]):
+                        self.hidW[ nhid - i-2][j,k ] -= lr*self.hidError[nhid-i-2][j,k]/(batchSize*np.sqrt(self.hidPastGrad[nhid-i-2][j,k]+ epsi))
 
                 # update hidden biases
-                for k in range(self.nnod[self.nhid-i-1]):
-                    self.hidW[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] -= lr*self.hidError[self.nhid-i-2][k, self.nnod[self.nhid-i-2]]/(batchSize*np.sqrt(  self.hidPastGrad[self.nhid-i-2][k, self.nnod[self.nhid-i-2]]   + epsi))
+                for k in range(nnod[nhid-i-1]):
+                    self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -= lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize*np.sqrt(  self.hidPastGrad[nhid-i-2][k, nnod[nhid-i-2]]   + epsi))
 
             #update input weights
-            for i in range(self.nnod[0]):
+            for i in range(nnod[0]):
                 for j in range(n_inputs):
                     self.inW[i, j] -= lr*self.inError[i,j]/(batchSize*np.sqrt( self.inPastGrad[i,j] + epsi ))
 
             #update input biases
-            for i in range(self.nnod[0]):
+            for i in range(nnod[0]):
                 self.inW[i,n_inputs] -= lr*self.inError[i,n_inputs]/(batchSize*np.sqrt(self.inPastGrad[i,n_inputs] +epsi))
 
         elif gradMethod == 'gdm':
 
             # update output weights
             for i in range(numClasses):
-                for j in range(self.nnod[self.nhid - 1]):
+                for j in range(nnod[nhid - 1]):
                     self.outDir[i,j] = gamma*self.outDir[i,j] + lr*self.outError[i,j]/batchSize
                     self.outW[i,j] -= self.outDir[i,j]
 
             #update output biases
             for i in range(numClasses):
-                self.outDir[i,self.nnod[self.nhid-1]] = gamma*self.outDir[i,self.nnod[self.nhid-1]] + lr*self.outError[i, self.nnod[self.nhid-1] ]/(batchSize)
-                self.outW[i,self.nnod[self.nhid-1]] -= self.outDir[i,self.nnod[self.nhid-1]]
+                self.outDir[i,nnod[nhid-1]] = gamma*self.outDir[i,nnod[nhid-1]] + lr*self.outError[i, nnod[nhid-1] ]/(batchSize)
+                self.outW[i,nnod[nhid-1]] -= self.outDir[i,nnod[nhid-1]]
 
-            for i in range(self.nhid-1):
+            for i in range(nhid-1):
                 # update hidden weights
-                for k in range(self.nnod[self.nhid-i-2]):
-                    for j in range(self.nnod[self.nhid-i-1]):
-                        self.hidDir[ self.nhid - i-2][j,k ] = gamma*self.hidDir[ self.nhid - i-2][j,k ] + lr*self.hidError[self.nhid-i-2][j,k]/(batchSize)
-                        self.hidW[ self.nhid - i-2][j,k ] -=  self.hidDir[ self.nhid - i-2][j,k ]
+                for k in range(nnod[nhid-i-2]):
+                    for j in range(nnod[nhid-i-1]):
+                        self.hidDir[ nhid - i-2][j,k ] = gamma*self.hidDir[ nhid - i-2][j,k ] + lr*self.hidError[nhid-i-2][j,k]/(batchSize)
+                        self.hidW[ nhid - i-2][j,k ] -=  self.hidDir[ nhid - i-2][j,k ]
 
                 # update hidden biases
-                for k in range(self.nnod[self.nhid-i-1]):
-                    self.hidDir[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] = gamma*self.hidDir[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] + lr*self.hidError[self.nhid-i-2][k, self.nnod[self.nhid-i-2]]/(batchSize)
-                    self.hidW[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] -=  self.hidDir[self.nhid-i-2][k, self.nnod[self.nhid-i-2]]
+                for k in range(nnod[nhid-i-1]):
+                    self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] = gamma*self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] + lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize)
+                    self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -=  self.hidDir[nhid-i-2][k, nnod[nhid-i-2]]
 
             #update input weights
-            for i in range(self.nnod[0]):
+            for i in range(nnod[0]):
                 for j in range(n_inputs):
                     self.inDir[i, j] =gamma*self.inDir[i, j] + lr*self.inError[i,j]/(batchSize)
                     self.inW[i, j] -=  self.inDir[i, j]
 
             #update input biases
-            for i in range(self.nnod[0]):
+            for i in range(nnod[0]):
                 self.inDir[i,n_inputs] = gamma*self.inDir[i,n_inputs]+ lr*self.inError[i,n_inputs]/(batchSize)
                 self.inW[i,n_inputs] -=  self.inDir[i,n_inputs]
 
@@ -183,7 +182,12 @@ class network:
 
         return activations.backActivate( error, self.netUnits[layer-1][:,0], self.netUnits[layer-1][:,1] , self.actfn )
 
-    def backward(self,inputVal,  label):
+    def backward(self,inputVal,  label, gradMethod):
+
+        ada = False
+        if (gradMethod == 'adagrad') : ada = True
+        nnod= self.nnod
+        nhid = self.nhid
 
         assert(len(label) == numClasses), "Size Mismatch : Target Label"
         assert(sum(label) == 1 ), "An image can not have more than one class"
@@ -194,54 +198,54 @@ class network:
         # errors for the last hidden layer
         lastHidError = []
 
-        for i in range(self.nnod[self.nhid - 1]):
+        for i in range(nnod[nhid - 1]):
             lastHidError.append( sum(backError * self.outW[:,i]) )
 
         # update output weights
         for i in range(numClasses):
-            for j in range(self.nnod[self.nhid - 1]):
-                self.outError[i,j] += backError[i]*self.netUnits[self.nhid-1][j,1]
-                self.outPastGrad[i,j] += self.outError[i,j]**2
+            for j in range(nnod[nhid - 1]):
+                self.outError[i,j] += backError[i]*self.netUnits[nhid-1][j,1]
+                if (ada): self.outPastGrad[i,j] += self.outError[i,j]**2
 
         #update output biases
         for i in range(numClasses):
-            self.outError[i,self.nnod[self.nhid-1]] += backError[i]
-            self.outPastGrad[i,self.nnod[self.nhid-1]] += self.outError[i,self.nnod[self.nhid-1]]**2
+            self.outError[i,nnod[nhid-1]] += backError[i]
+            if (ada): self.outPastGrad[i,nnod[nhid-1]] += self.outError[i,nnod[nhid-1]]**2
 
         prevError = np.asarray(lastHidError)
 
         # error for the rest of the hidden layers
-        for i in range(self.nhid-1):
+        for i in range(nhid-1):
 
-            tempError = self.backActivate(prevError , self.nhid - i)
+            tempError = activations.backActivate( prevError, self.netUnits[nhid-i-1][:,0], self.netUnits[nhid-i-1][:,1] , self.actfn )
             prevError = []
-            for j in range(self.nnod[self.nhid-i-2]):
-                prevError.append(sum(tempError*self.hidW[self.nhid - i -2][:, j]))
+            for j in range(nnod[nhid-i-2]):
+                prevError.append(sum(tempError*self.hidW[nhid - i -2][:, j]))
 
             prevError = np.asarray(prevError)
             # update hidden weights
-            for k in range(self.nnod[self.nhid-i-2]):
-                for j in range(self.nnod[self.nhid-i-1]):
-                    self.hidError[ self.nhid - i-2][j,k ] += tempError[j]*self.netUnits[self.nhid-i-2][k,1]
-                    self.hidPastGrad[ self.nhid - i-2][j,k ] += self.hidError[self.nhid-i-2][j,k]**2
+            for k in range(nnod[nhid-i-2]):
+                for j in range(nnod[nhid-i-1]):
+                    self.hidError[ nhid - i-2][j,k ] += tempError[j]*self.netUnits[nhid-i-2][k,1]
+                    if (ada): self.hidPastGrad[ nhid - i-2][j,k ] += self.hidError[nhid-i-2][j,k]**2
 
             # update hidden biases
-            for k in range(self.nnod[self.nhid-i-1]):
-                self.hidError[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] += tempError[k]
-                self.hidPastGrad[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] += self.hidError[self.nhid-i-2][k, self.nnod[self.nhid-i-2]]**2
+            for k in range(nnod[nhid-i-1]):
+                self.hidError[nhid-i-2][k, nnod[nhid-i-2]] += tempError[k]
+                if (ada): self.hidPastGrad[nhid-i-2][k, nnod[nhid-i-2]] += self.hidError[nhid-i-2][k, nnod[nhid-i-2]]**2
 
-        tempError = self.backActivate(prevError, 1)
+        tempError = activations.backActivate( prevError, self.netUnits[0][:,0], self.netUnits[0][:,1] , self.actfn )
 
         #update input weights
-        for i in range(self.nnod[0]):
+        for i in range(nnod[0]):
             for j in range(n_inputs):
                 self.inError[i, j] +=  tempError[i]*inputVal[j]
-                self.inPastGrad[i, j] += self.inError[i,j]**2
+                if (ada): self.inPastGrad[i, j] += self.inError[i,j]**2
 
         #update input biases
-        for i in range(self.nnod[0]):
+        for i in range(nnod[0]):
             self.inError[i,n_inputs] += tempError[i]
-            self.inPastGrad[i,n_inputs] += self.inError[i, n_inputs]**2
+            if(ada): self.inPastGrad[i,n_inputs] += self.inError[i, n_inputs]**2
 
     def trloss(self, inData, inlabel):
 
@@ -284,7 +288,7 @@ class network:
                 self.forward(batchInput)
 
                 # backward pass: accumulate gradients
-                self.backward(batchInput, batchLabel)
+                self.backward(batchInput, batchLabel, gradMethod)
 
                 loss = loss + self.trloss(batchInput, batchLabel)
             # update weights
