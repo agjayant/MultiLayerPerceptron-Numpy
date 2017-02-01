@@ -111,68 +111,107 @@ class network:
         elif gradMethod == 'adagrad':
 
             # update output weights
-            for i in range(numClasses):
-                for j in range(nnod[nhid - 1]):
-                    self.outW[i,j] -= lr*self.outError[i,j]/(batchSize*np.sqrt(self.outPastGrad[i,j] + epsi))
+            # for i in range(numClasses):
+                # for j in range(nnod[nhid - 1]):
+                    # self.outW[i,j] -= lr*self.outError[i,j]/(batchSize*np.sqrt(self.outPastGrad[i,j] + epsi))
+
+            self.outW -= lr*self.outError/(batchSize*np.sqrt(self.outPastGrad + epsi))
+
 
             #update output biases
-            for i in range(numClasses):
-                self.outW[i,nnod[nhid-1]] -= lr*self.outError[i, nnod[nhid-1] ]/(batchSize*np.sqrt(self.outPastGrad[i,nnod[nhid-1] ]+ epsi))
+            # for i in range(numClasses):
+                # self.outW[i,nnod[nhid-1]] -= lr*self.outError[i, nnod[nhid-1] ]/(batchSize*np.sqrt(self.outPastGrad[i,nnod[nhid-1] ]+ epsi))
+
+            self.outW[:,nnod[nhid-1]] -= lr*self.outError[:, nnod[nhid-1] ]/(batchSize*np.sqrt(self.outPastGrad[:,nnod[nhid-1] ]+ epsi))
 
             for i in range(nhid-1):
                 # update hidden weights
-                for k in range(nnod[nhid-i-2]):
-                    for j in range(nnod[nhid-i-1]):
-                        self.hidW[ nhid - i-2][j,k ] -= lr*self.hidError[nhid-i-2][j,k]/(batchSize*np.sqrt(self.hidPastGrad[nhid-i-2][j,k]+ epsi))
+                # for k in range(nnod[nhid-i-2]):
+                    # for j in range(nnod[nhid-i-1]):
+                        # self.hidW[ nhid - i-2][j,k ] -= lr*self.hidError[nhid-i-2][j,k]/(batchSize*np.sqrt(self.hidPastGrad[nhid-i-2][j,k]+ epsi))
+
+
+                self.hidW[ nhid - i-2] -= lr*self.hidError[nhid-i-2]/(batchSize*np.sqrt(self.hidPastGrad[nhid-i-2] + epsi))
 
                 # update hidden biases
-                for k in range(nnod[nhid-i-1]):
-                    self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -= lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize*np.sqrt(  self.hidPastGrad[nhid-i-2][k, nnod[nhid-i-2]]   + epsi))
+                # for k in range(nnod[nhid-i-1]):
+                    # self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -= lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize*np.sqrt(  self.hidPastGrad[nhid-i-2][k, nnod[nhid-i-2]]   + epsi))
+
+
+                self.hidW[nhid-i-2][ : , nnod[nhid-i-2]] -= lr*self.hidError[nhid-i-2][:, nnod[nhid-i-2]]/(batchSize*np.sqrt(  self.hidPastGrad[nhid-i-2][:, nnod[nhid-i-2]]   + epsi))
 
             #update input weights
-            for i in range(nnod[0]):
-                for j in range(n_inputs):
-                    self.inW[i, j] -= lr*self.inError[i,j]/(batchSize*np.sqrt( self.inPastGrad[i,j] + epsi ))
+            # for i in range(nnod[0]):
+                # for j in range(n_inputs):
+                    # self.inW[i, j] -= lr*self.inError[i,j]/(batchSize*np.sqrt( self.inPastGrad[i,j] + epsi ))
+
+            self.inW -= lr*self.inError/(batchSize*np.sqrt( self.inPastGrad + epsi ))
 
             #update input biases
-            for i in range(nnod[0]):
-                self.inW[i,n_inputs] -= lr*self.inError[i,n_inputs]/(batchSize*np.sqrt(self.inPastGrad[i,n_inputs] +epsi))
+            # for i in range(nnod[0]):
+                # self.inW[i,n_inputs] -= lr*self.inError[i,n_inputs]/(batchSize*np.sqrt(self.inPastGrad[i,n_inputs] +epsi))
+
+            self.inW[:,n_inputs] -= lr*self.inError[:,n_inputs]/(batchSize*np.sqrt(self.inPastGrad[:,n_inputs] +epsi))
 
         elif gradMethod == 'gdm':
 
             # update output weights
-            for i in range(numClasses):
-                for j in range(nnod[nhid - 1]):
-                    self.outDir[i,j] = gamma*self.outDir[i,j] + lr*self.outError[i,j]/batchSize
-                    self.outW[i,j] -= self.outDir[i,j]
+            # for i in range(numClasses):
+                # for j in range(nnod[nhid - 1]):
+                    # self.outDir[i,j] = gamma*self.outDir[i,j] + lr*self.outError[i,j]/batchSize
+                    # self.outW[i,j] -= self.outDir[i,j]
+
+            self.outDir = gamma*self.outDir + lr*self.outError/batchSize
+            self.outW -= self.outDir
+
+
 
             #update output biases
-            for i in range(numClasses):
-                self.outDir[i,nnod[nhid-1]] = gamma*self.outDir[i,nnod[nhid-1]] + lr*self.outError[i, nnod[nhid-1] ]/(batchSize)
-                self.outW[i,nnod[nhid-1]] -= self.outDir[i,nnod[nhid-1]]
+            # for i in range(numClasses):
+                # self.outDir[i,nnod[nhid-1]] = gamma*self.outDir[i,nnod[nhid-1]] + lr*self.outError[i, nnod[nhid-1] ]/(batchSize)
+                # self.outW[i,nnod[nhid-1]] -= self.outDir[i,nnod[nhid-1]]
+
+            self.outDir[:,nnod[nhid-1]] = gamma*self.outDir[:,nnod[nhid-1]] + lr*self.outError[:, nnod[nhid-1] ]/(batchSize)
+            self.outW[:,nnod[nhid-1]] -= self.outDir[:,nnod[nhid-1]]
 
             for i in range(nhid-1):
                 # update hidden weights
-                for k in range(nnod[nhid-i-2]):
-                    for j in range(nnod[nhid-i-1]):
-                        self.hidDir[ nhid - i-2][j,k ] = gamma*self.hidDir[ nhid - i-2][j,k ] + lr*self.hidError[nhid-i-2][j,k]/(batchSize)
-                        self.hidW[ nhid - i-2][j,k ] -=  self.hidDir[ nhid - i-2][j,k ]
+                # for k in range(nnod[nhid-i-2]):
+                    # for j in range(nnod[nhid-i-1]):
+                        # self.hidDir[ nhid - i-2][j,k ] = gamma*self.hidDir[ nhid - i-2][j,k ] + lr*self.hidError[nhid-i-2][j,k]/(batchSize)
+                        # self.hidW[ nhid - i-2][j,k ] -=  self.hidDir[ nhid - i-2][j,k ]
+
+                self.hidDir[ nhid - i-2] = gamma*self.hidDir[ nhid - i-2] + lr*self.hidError[nhid-i-2]/(batchSize)
+                self.hidW[ nhid - i-2] -=  self.hidDir[ nhid - i-2]
+
 
                 # update hidden biases
-                for k in range(nnod[nhid-i-1]):
-                    self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] = gamma*self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] + lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize)
-                    self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -=  self.hidDir[nhid-i-2][k, nnod[nhid-i-2]]
+                # for k in range(nnod[nhid-i-1]):
+                    # self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] = gamma*self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] + lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize)
+                    # self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -=  self.hidDir[nhid-i-2][k, nnod[nhid-i-2]]
+
+                self.hidDir[nhid-i-2][:, nnod[nhid-i-2]] = gamma*self.hidDir[nhid-i-2][:, nnod[nhid-i-2]] + lr*self.hidError[nhid-i-2][:, nnod[nhid-i-2]]/(batchSize)
+                self.hidW[nhid-i-2][:, nnod[nhid-i-2]] -=  self.hidDir[nhid-i-2][:, nnod[nhid-i-2]]
+
 
             #update input weights
-            for i in range(nnod[0]):
-                for j in range(n_inputs):
-                    self.inDir[i, j] =gamma*self.inDir[i, j] + lr*self.inError[i,j]/(batchSize)
-                    self.inW[i, j] -=  self.inDir[i, j]
+            # for i in range(nnod[0]):
+                # for j in range(n_inputs):
+                    # self.inDir[i, j] =gamma*self.inDir[i, j] + lr*self.inError[i,j]/(batchSize)
+                    # self.inW[i, j] -=  self.inDir[i, j]
+
+            self.inDir =gamma*self.inDir + lr*self.inError/(batchSize)
+            self.inW -=  self.inDir
+
 
             #update input biases
-            for i in range(nnod[0]):
-                self.inDir[i,n_inputs] = gamma*self.inDir[i,n_inputs]+ lr*self.inError[i,n_inputs]/(batchSize)
-                self.inW[i,n_inputs] -=  self.inDir[i,n_inputs]
+            # for i in range(nnod[0]):
+                # self.inDir[i,n_inputs] = gamma*self.inDir[i,n_inputs]+ lr*self.inError[i,n_inputs]/(batchSize)
+                # self.inW[i,n_inputs] -=  self.inDir[i,n_inputs]
+
+            self.inDir[:,n_inputs] = gamma*self.inDir[:,n_inputs]+ lr*self.inError[:,n_inputs]/(batchSize)
+            self.inW[:,n_inputs] -=  self.inDir[:,n_inputs]
+
 
 
         else:
