@@ -8,6 +8,7 @@ n_inputs = config.n_inputs          # input feature size
 numClasses = config.numClasses
 initBias = config.initBias
 epsi = config.epsilon
+gamma= config.gamma
 
 class network:
     def __init__(self, nhidden_layers, nnodes, actfun):
@@ -25,17 +26,22 @@ class network:
 
         self.inError = np.asarray([[0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
         self.inPastGrad = np.asarray([[0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
+        self.inDir = np.asarray([[0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
+
         # hidden weights: connecting intermediate hidden layers
         if nhidden_layers > 1:
             self.hidW = []
             self.hidError = []
             self.hidPastGrad = []
+            self.hidDir = []
             for i in range(nhidden_layers-1):
                 temp =  np.random.uniform(minW,maxW,size=( nnodes[i+1],nnodes[i]+1) )
                 self.hidW.append(temp)
                 self.hidW[i][:,nnodes[i]] = initBias
                 self.hidError.append(np.asarray([[0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
                 self.hidPastGrad.append(np.asarray([[0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
+                self.hidDir.append(np.asarray([[0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
+
 
         # output weights: connecting last hidden layer and output layer
         self.outW =  np.random.uniform(minW,maxW,size=(numClasses,nnodes[nhidden_layers-1]+1) )
@@ -44,6 +50,7 @@ class network:
         #output weights accumulated Error
         self.outError = np.asarray([[0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
         self.outPastGrad = np.asarray([[0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
+        self.outDir = np.asarray([[0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
 
         #each neuron has an input and an output
         # netUnits[2][5,0], netUnits[2][5,1] --> input, output of the 6th neuron in 3rd layer
@@ -131,6 +138,43 @@ class network:
             #update input biases
             for i in range(self.nnod[0]):
                 self.inW[i,n_inputs] -= lr*self.inError[i,n_inputs]/(batchSize*np.sqrt(self.inPastGrad[i,n_inputs] +epsi))
+
+        elif gradMethod == 'gdm':
+
+            # update output weights
+            for i in range(numClasses):
+                for j in range(self.nnod[self.nhid - 1]):
+                    self.outDir[i,j] = gamma*self.outDir[i,j] + lr*self.outError[i,j]/batchSize
+                    self.outW[i,j] -= self.outDir[i,j]
+
+            #update output biases
+            for i in range(numClasses):
+                self.outDir[i,self.nnod[self.nhid-1]] = gamma*self.outDir[i,self.nnod[self.nhid-1]] + lr*self.outError[i, self.nnod[self.nhid-1] ]/(batchSize)
+                self.outW[i,self.nnod[self.nhid-1]] -= self.outDir[i,self.nnod[self.nhid-1]]
+
+            for i in range(self.nhid-1):
+                # update hidden weights
+                for k in range(self.nnod[self.nhid-i-2]):
+                    for j in range(self.nnod[self.nhid-i-1]):
+                        self.hidDir[ self.nhid - i-2][j,k ] = gamma*self.hidDir[ self.nhid - i-2][j,k ] + lr*self.hidError[self.nhid-i-2][j,k]/(batchSize)
+                        self.hidW[ self.nhid - i-2][j,k ] -=  self.hidDir[ self.nhid - i-2][j,k ]
+
+                # update hidden biases
+                for k in range(self.nnod[self.nhid-i-1]):
+                    self.hidDir[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] = gamma*self.hidDir[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] + lr*self.hidError[self.nhid-i-2][k, self.nnod[self.nhid-i-2]]/(batchSize)
+                    self.hidW[self.nhid-i-2][k, self.nnod[self.nhid-i-2]] -=  self.hidDir[self.nhid-i-2][k, self.nnod[self.nhid-i-2]]
+
+            #update input weights
+            for i in range(self.nnod[0]):
+                for j in range(n_inputs):
+                    self.inDir[i, j] =gamma*self.inDir[i, j] + lr*self.inError[i,j]/(batchSize)
+                    self.inW[i, j] -=  self.inDir[i, j]
+
+            #update input biases
+            for i in range(self.nnod[0]):
+                self.inDir[i,n_inputs] = gamma*self.inDir[i,n_inputs]+ lr*self.inError[i,n_inputs]/(batchSize)
+                self.inW[i,n_inputs] -=  self.inDir[i,n_inputs]
+
 
         else:
             assert(0==1),'Invalid Gradient Method'
