@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 mnist = scio.loadmat('mnist_big.mat')
 
-trainExamples = 40
+trainExamples = 20
 valExamples =  1000
 
 trainList = [np.random.randint(0,60000) for i in range(trainExamples)]
@@ -46,5 +46,5 @@ net = network(1, [100], 'relu')
 
 # In[ ]:
 
-net.train(trainData, trainLabel, valData, valLabel, 10, 5,lr =0.0001, gradMethod = 'gdm')
+net.train(trainData, trainLabel, valData, valLabel, 10, 5,lr =0.0001, gradMethod = 'gdm', log=True, trainLoss='1_100_relu_loss',valAccuracy='1_100_relu_acc')
 
