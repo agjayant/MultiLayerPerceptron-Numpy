@@ -1,6 +1,7 @@
 import numpy as np
 import activations
 import config
+import fileinput
 
 minW = config.minW
 maxW = config.maxW
@@ -300,12 +301,16 @@ class network:
                 correct += 1
         return correct*1.0/len(valData)
 
-    def train(self, trainInput, trainLabel,valData, valLabel, batchSize, maxIter, lr=0.0001, gradMethod='mbsgd'):
+    def train(self, trainInput, trainLabel,valData, valLabel, batchSize, maxIter, lr=0.0001, gradMethod='mbsgd', log =False, trainLoss= 'loss.log', valAccuracy='acc.log'):
 
         # assert(len(trainInput) >= batchSize), "Batch Size is greater than number of examples."
         assert(len(trainInput) == len(trainLabel)), "Size Mismatch, Training Data not equal to Training labels"
         assert(len(trainInput[0,:]) == n_inputs ), "Input Data Dimension Mismatch"
         assert(len(trainLabel[0,:]) == numClasses), "Target Label Dimension Mismatch"
+
+        if log :
+            file1 = open(trainLoss , 'w')
+            file2 = open(valAccuracy, 'w')
 
         j = 0
         iterforEpoch = len(trainInput)/batchSize
@@ -334,11 +339,21 @@ class network:
             self.update(batchSize, lr, gradMethod )
 
             print 'Iteration ',i+1,'/',maxIter,'Training Loss = ', loss/batchSize
+            if log :
+                file1.write(str(i)+ '  '+ str(loss/batchSize) + '\n')
 
-            if (i+1)%iterforEpoch == 0 :
-                print 'Epoch ', i/iterforEpoch + 1 ,'Accuracy: ',self.validate(valData, valLabel)
+            if (i+1)%20 == 0 :
+                acc = self.validate(valData,valLabel)
+                print 'After Iterations ', i ,'Accuracy: ',acc
+                if log :
+                    file2.write(str(i) + '  '+ str(acc)+ '\n')
+                if (i+1)%iterforEpoch == 0:
+                    print 'After Epoch ', (i+1)/iterforEpoch ,'Accuracy: ',self.validate(valData, valLabel)
 
             j = (j+batchSize)%len(trainInput)
+
+        file1.close()
+        file2.close()
 
 
 
