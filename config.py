@@ -1,31 +1,7 @@
 ############################
-## Training Parameters    ##
-############################
-
-trainExamples = 1000
-valExamples = 100
-batchSize = 10
-maxIter = 500
-lr = 0.0001
-
-############################
 ## Network Parameters     ##
 ############################
 
-'''
-Architecture
-'''
-
-# Number of Hidden Layers
-nhidden_layers = 2
-
-# Number of nodes in each hidden layer
-# Example: For 2 layers with 20 and 15 nodes each
-# nnodes = [20,15]
-nnodes = [20, 15]
-
-#Activation Function : 'relu'
-actfun = 'relu'
 
 '''
 Fixed

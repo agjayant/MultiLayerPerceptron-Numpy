@@ -25,9 +25,14 @@ class network:
         self.inW =  np.random.uniform(minW,maxW,size=(nnodes[0], n_inputs +1 ) )
         self.inW[:,n_inputs] = initBias
 
-        self.inError = np.asarray([[0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
-        self.inPastGrad = np.asarray([[0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
-        self.inDir = np.asarray([[0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
+        # Gradient for input Weights
+        self.inError = np.asarray([[0.0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
+
+        # Past Gradient Record for input Weights for AdaGrad
+        self.inPastGrad = np.asarray([[0.0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
+
+        # Dir for input Weights for Gradient Descent with Momentum
+        self.inDir = np.asarray([[0.0 for i in range(n_inputs+1)] for j in range(nnodes[0])])
 
         # hidden weights: connecting intermediate hidden layers
         if nhidden_layers > 1:
@@ -39,29 +44,28 @@ class network:
                 temp =  np.random.uniform(minW,maxW,size=( nnodes[i+1],nnodes[i]+1) )
                 self.hidW.append(temp)
                 self.hidW[i][:,nnodes[i]] = initBias
-                self.hidError.append(np.asarray([[0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
-                self.hidPastGrad.append(np.asarray([[0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
-                self.hidDir.append(np.asarray([[0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
+                self.hidError.append(np.asarray([[0.0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
+                self.hidPastGrad.append(np.asarray([[0.0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
+                self.hidDir.append(np.asarray([[0.0 for k in range(nnodes[i]+1)] for j in range(nnodes[i+1])]))
 
 
         # output weights: connecting last hidden layer and output layer
         self.outW =  np.random.uniform(minW,maxW,size=(numClasses,nnodes[nhidden_layers-1]+1) )
         self.outW[:,nnodes[nhidden_layers-1]] = initBias
 
-        #output weights accumulated Error
-        self.outError = np.asarray([[0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
-        self.outPastGrad = np.asarray([[0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
-        self.outDir = np.asarray([[0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
+        self.outError = np.asarray([[0.0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
+        self.outPastGrad = np.asarray([[0.0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
+        self.outDir = np.asarray([[0.0 for i in range(nnodes[nhidden_layers-1]+1)] for j in range(numClasses)])
 
         #each neuron has an input and an output
         # netUnits[2][5,0], netUnits[2][5,1] --> input, output of the 6th neuron in 3rd layer
         self.netUnits = []
         for i in range(nhidden_layers):
-            self.netUnits.append(np.asarray([[0 for inout in range(2)] for inlayer in range(nnodes[i])]))
+            self.netUnits.append(np.asarray([[0.0 for inout in range(2)] for inlayer in range(nnodes[i])]))
 
         # output of the network
-        self.outNet = np.asarray([0]* numClasses)
-        self.outProb = np.asarray([0]* numClasses)
+        self.outNet = np.asarray([0.0]* numClasses)
+        self.outProb = np.asarray([0.0]* numClasses)
 
     def forward(self, inputVal):
 
@@ -112,108 +116,51 @@ class network:
         elif gradMethod == 'adagrad':
 
             # update output weights
-            # for i in range(numClasses):
-                # for j in range(nnod[nhid - 1]):
-                    # self.outW[i,j] -= lr*self.outError[i,j]/(batchSize*np.sqrt(self.outPastGrad[i,j] + epsi))
-
             self.outW -= lr*self.outError/(batchSize*np.sqrt(self.outPastGrad + epsi))
 
-
             #update output biases
-            # for i in range(numClasses):
-                # self.outW[i,nnod[nhid-1]] -= lr*self.outError[i, nnod[nhid-1] ]/(batchSize*np.sqrt(self.outPastGrad[i,nnod[nhid-1] ]+ epsi))
-
             self.outW[:,nnod[nhid-1]] -= lr*self.outError[:, nnod[nhid-1] ]/(batchSize*np.sqrt(self.outPastGrad[:,nnod[nhid-1] ]+ epsi))
 
             for i in range(nhid-1):
                 # update hidden weights
-                # for k in range(nnod[nhid-i-2]):
-                    # for j in range(nnod[nhid-i-1]):
-                        # self.hidW[ nhid - i-2][j,k ] -= lr*self.hidError[nhid-i-2][j,k]/(batchSize*np.sqrt(self.hidPastGrad[nhid-i-2][j,k]+ epsi))
-
-
                 self.hidW[ nhid - i-2] -= lr*self.hidError[nhid-i-2]/(batchSize*np.sqrt(self.hidPastGrad[nhid-i-2] + epsi))
 
                 # update hidden biases
-                # for k in range(nnod[nhid-i-1]):
-                    # self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -= lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize*np.sqrt(  self.hidPastGrad[nhid-i-2][k, nnod[nhid-i-2]]   + epsi))
-
-
                 self.hidW[nhid-i-2][ : , nnod[nhid-i-2]] -= lr*self.hidError[nhid-i-2][:, nnod[nhid-i-2]]/(batchSize*np.sqrt(  self.hidPastGrad[nhid-i-2][:, nnod[nhid-i-2]]   + epsi))
 
             #update input weights
-            # for i in range(nnod[0]):
-                # for j in range(n_inputs):
-                    # self.inW[i, j] -= lr*self.inError[i,j]/(batchSize*np.sqrt( self.inPastGrad[i,j] + epsi ))
-
             self.inW -= lr*self.inError/(batchSize*np.sqrt( self.inPastGrad + epsi ))
 
             #update input biases
-            # for i in range(nnod[0]):
-                # self.inW[i,n_inputs] -= lr*self.inError[i,n_inputs]/(batchSize*np.sqrt(self.inPastGrad[i,n_inputs] +epsi))
-
             self.inW[:,n_inputs] -= lr*self.inError[:,n_inputs]/(batchSize*np.sqrt(self.inPastGrad[:,n_inputs] +epsi))
 
         elif gradMethod == 'gdm':
 
             # update output weights
-            # for i in range(numClasses):
-                # for j in range(nnod[nhid - 1]):
-                    # self.outDir[i,j] = gamma*self.outDir[i,j] + lr*self.outError[i,j]/batchSize
-                    # self.outW[i,j] -= self.outDir[i,j]
-
             self.outDir = gamma*self.outDir + lr*self.outError/batchSize
             self.outW -= self.outDir
 
-
-
             #update output biases
-            # for i in range(numClasses):
-                # self.outDir[i,nnod[nhid-1]] = gamma*self.outDir[i,nnod[nhid-1]] + lr*self.outError[i, nnod[nhid-1] ]/(batchSize)
-                # self.outW[i,nnod[nhid-1]] -= self.outDir[i,nnod[nhid-1]]
-
             self.outDir[:,nnod[nhid-1]] = gamma*self.outDir[:,nnod[nhid-1]] + lr*self.outError[:, nnod[nhid-1] ]/(batchSize)
             self.outW[:,nnod[nhid-1]] -= self.outDir[:,nnod[nhid-1]]
 
             for i in range(nhid-1):
                 # update hidden weights
-                # for k in range(nnod[nhid-i-2]):
-                    # for j in range(nnod[nhid-i-1]):
-                        # self.hidDir[ nhid - i-2][j,k ] = gamma*self.hidDir[ nhid - i-2][j,k ] + lr*self.hidError[nhid-i-2][j,k]/(batchSize)
-                        # self.hidW[ nhid - i-2][j,k ] -=  self.hidDir[ nhid - i-2][j,k ]
-
                 self.hidDir[ nhid - i-2] = gamma*self.hidDir[ nhid - i-2] + lr*self.hidError[nhid-i-2]/(batchSize)
                 self.hidW[ nhid - i-2] -=  self.hidDir[ nhid - i-2]
 
-
                 # update hidden biases
-                # for k in range(nnod[nhid-i-1]):
-                    # self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] = gamma*self.hidDir[nhid-i-2][k, nnod[nhid-i-2]] + lr*self.hidError[nhid-i-2][k, nnod[nhid-i-2]]/(batchSize)
-                    # self.hidW[nhid-i-2][k, nnod[nhid-i-2]] -=  self.hidDir[nhid-i-2][k, nnod[nhid-i-2]]
-
                 self.hidDir[nhid-i-2][:, nnod[nhid-i-2]] = gamma*self.hidDir[nhid-i-2][:, nnod[nhid-i-2]] + lr*self.hidError[nhid-i-2][:, nnod[nhid-i-2]]/(batchSize)
                 self.hidW[nhid-i-2][:, nnod[nhid-i-2]] -=  self.hidDir[nhid-i-2][:, nnod[nhid-i-2]]
 
 
             #update input weights
-            # for i in range(nnod[0]):
-                # for j in range(n_inputs):
-                    # self.inDir[i, j] =gamma*self.inDir[i, j] + lr*self.inError[i,j]/(batchSize)
-                    # self.inW[i, j] -=  self.inDir[i, j]
-
             self.inDir =gamma*self.inDir + lr*self.inError/(batchSize)
             self.inW -=  self.inDir
 
-
             #update input biases
-            # for i in range(nnod[0]):
-                # self.inDir[i,n_inputs] = gamma*self.inDir[i,n_inputs]+ lr*self.inError[i,n_inputs]/(batchSize)
-                # self.inW[i,n_inputs] -=  self.inDir[i,n_inputs]
-
             self.inDir[:,n_inputs] = gamma*self.inDir[:,n_inputs]+ lr*self.inError[:,n_inputs]/(batchSize)
             self.inW[:,n_inputs] -=  self.inDir[:,n_inputs]
-
-
 
         else:
             assert(0==1),'Invalid Gradient Method'
@@ -223,7 +170,7 @@ class network:
         return activations.backActivate( error, self.netUnits[layer-1][:,0], self.netUnits[layer-1][:,1] , self.actfn )
 
     def backward(self,inputVal,  label, gradMethod):
-
+        ### Accumulate Gradients
         ada = False
         if (gradMethod == 'adagrad') : ada = True
         nnod= self.nnod
@@ -241,20 +188,20 @@ class network:
         for i in range(nnod[nhid - 1]):
             lastHidError.append( sum(backError * self.outW[:,i]) )
 
-        # update output weights
+        # output Weight Gradients
         for i in range(numClasses):
             for j in range(nnod[nhid - 1]):
                 self.outError[i,j] += backError[i]*self.netUnits[nhid-1][j,1]
                 if (ada): self.outPastGrad[i,j] += self.outError[i,j]**2
 
-        #update output biases
+        #output biases Gradients
         for i in range(numClasses):
             self.outError[i,nnod[nhid-1]] += backError[i]
             if (ada): self.outPastGrad[i,nnod[nhid-1]] += self.outError[i,nnod[nhid-1]]**2
 
         prevError = np.asarray(lastHidError)
 
-        # error for the rest of the hidden layers
+        # Gradients for the rest of the hidden layers
         for i in range(nhid-1):
 
             tempError = activations.backActivate( prevError, self.netUnits[nhid-i-1][:,0], self.netUnits[nhid-i-1][:,1] , self.actfn )
@@ -263,26 +210,25 @@ class network:
                 prevError.append(sum(tempError*self.hidW[nhid - i -2][:, j]))
 
             prevError = np.asarray(prevError)
-            # update hidden weights
+            # Weights
             for k in range(nnod[nhid-i-2]):
                 for j in range(nnod[nhid-i-1]):
                     self.hidError[ nhid - i-2][j,k ] += tempError[j]*self.netUnits[nhid-i-2][k,1]
                     if (ada): self.hidPastGrad[ nhid - i-2][j,k ] += self.hidError[nhid-i-2][j,k]**2
-
-            # update hidden biases
+            # Biases
             for k in range(nnod[nhid-i-1]):
                 self.hidError[nhid-i-2][k, nnod[nhid-i-2]] += tempError[k]
                 if (ada): self.hidPastGrad[nhid-i-2][k, nnod[nhid-i-2]] += self.hidError[nhid-i-2][k, nnod[nhid-i-2]]**2
 
         tempError = activations.backActivate( prevError, self.netUnits[0][:,0], self.netUnits[0][:,1] , self.actfn )
 
-        #update input weights
+        #input weights
         for i in range(nnod[0]):
             for j in range(n_inputs):
                 self.inError[i, j] +=  tempError[i]*inputVal[j]
                 if (ada): self.inPastGrad[i, j] += self.inError[i,j]**2
 
-        #update input biases
+        #input biases
         for i in range(nnod[0]):
             self.inError[i,n_inputs] += tempError[i]
             if(ada): self.inPastGrad[i,n_inputs] += self.inError[i, n_inputs]**2
@@ -294,6 +240,7 @@ class network:
             loss = loss - inlabel[i]*np.log(self.outProb[i])
 
         return loss
+
     def validate(self, valData, valLabel):
         correct = 0
         for i in range(len(valData)):
@@ -303,7 +250,6 @@ class network:
 
     def train(self, trainInput, trainLabel,valData, valLabel, batchSize, maxIter, lr=0.0001, gradMethod='mbsgd', log =False, trainLoss= 'loss.log', valAccuracy='acc.log'):
 
-        # assert(len(trainInput) >= batchSize), "Batch Size is greater than number of examples."
         assert(len(trainInput) == len(trainLabel)), "Size Mismatch, Training Data not equal to Training labels"
         assert(len(trainInput[0,:]) == n_inputs ), "Input Data Dimension Mismatch"
         assert(len(trainLabel[0,:]) == numClasses), "Target Label Dimension Mismatch"
@@ -312,7 +258,7 @@ class network:
             file1 = open(trainLoss , 'w')
             file2 = open(valAccuracy, 'w')
 
-        j = 0
+        j = 0 #Position in Training data
         iterforEpoch = len(trainInput)/batchSize
         for i in range(maxIter):
 
@@ -340,13 +286,13 @@ class network:
 
             print 'Iteration ',i+1,'/',maxIter,'Training Loss = ', loss/batchSize
             if log :
-                file1.write(str(i)+ '  '+ str(loss/batchSize) + '\n')
+                file1.write(str(i+1)+ '  '+ str(loss/batchSize) + '\n')
 
             if (i+1)%20 == 0 :
                 acc = self.validate(valData,valLabel)
                 print 'After Iterations ', i ,'Accuracy: ',acc
                 if log :
-                    file2.write(str(i) + '  '+ str(acc)+ '\n')
+                    file2.write(str(i+1) + '  '+ str(acc)+ '\n')
                 if (i+1)%iterforEpoch == 0:
                     print 'After Epoch ', (i+1)/iterforEpoch ,'Accuracy: ',self.validate(valData, valLabel)
 
