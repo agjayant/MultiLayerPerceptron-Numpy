@@ -179,8 +179,9 @@ class network:
         assert(len(label) == numClasses), "Size Mismatch : Target Label"
         assert(sum(label) == 1 ), "An image can not have more than one class"
 
-        # gradient to be backpropagated for Cross Entropy Loss
-        backError = self.outProb - label
+        tempLoss = sum((self.outProb - label)*label)
+        # gradient to be backpropagated for Squared Loss
+        backError = tempLoss*self.outProb - self.outProb*(label - self.outProb)
 
         # errors for the last hidden layer
         lastHidError = []
@@ -237,9 +238,10 @@ class network:
 
         loss = 0
         for i in range(numClasses):
-            loss = loss - inlabel[i]*np.log(self.outProb[i])
+            # loss = loss - inlabel[i]*np.log(self.outProb[i])
+            loss = loss + (inlabel[i]-self.outProb[i])**2
 
-        return loss
+        return loss/2
 
     def validate(self, valData, valLabel):
         correct = 0
