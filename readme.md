@@ -1,10 +1,7 @@
 
 # Running:
     Please refer test.py
-
-# report.pdf: 
-    Contains the Plots and Results
-
+    
 # config.py:
     Contains the Fixed Parameters for the network such as input Dimension, Number of Classes, Initial bias etc
 
